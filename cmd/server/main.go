@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"todo-app/internal/server"
 )
 
 func main() {
 	err := server.Run()
 	if err != nil {
-		fmt.Printf("Error running server: %v\n", err)
+		log.Fatalf("Error running server: %v\n", err)
 	}
 	return
 }
