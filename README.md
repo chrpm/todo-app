@@ -3,6 +3,9 @@ API for a TODO application written in golang
 
 ## Using this application
 
+This application can used via the following endpoints. A live version of the app is hosted at `54.214.154.35`. i.e `curl -X POST -H "Content-Type: application/json" -d "{ \"goal\": \"Make Dinner\" }" -i  54.214.154.35/tasks
+`
+
 ### Endpoints
 Path: `/tasks`
 Method: `GET`
@@ -18,6 +21,7 @@ Method: `POST`
 Desc: Create a new todo task
 Content-Type: application/json
 Body: {"goal": "Get oil changed"}
+Note: Resource location is returned in `Location` header for other calls 
 
 Path: `/tasks/{id}`
 Method: `PUT`
