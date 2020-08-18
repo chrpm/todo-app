@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 	"net/http"
+	"todo-app/internal/config"
 	"todo-app/internal/repository"
 
 	"github.com/gorilla/mux"
@@ -11,7 +12,12 @@ import (
 // Run starts web server for todo app
 func Run() (err error) {
 
-	db, err := repository.DBConnection("root", "wWeJJt3Iqc_D", "/todo_app")
+	serverConfig, err := config.LoadConfig()
+	if err != nil {
+		return
+	}
+
+	db, err := repository.DBConnection(serverConfig.DBUser, serverConfig.DBPassword, serverConfig.Database)
 	if err != nil {
 		return err
 	}
@@ -25,9 +31,8 @@ func Run() (err error) {
 	dao := repository.NewTaskDAO(db)
 
 	router := initalizeRoutes(dao)
-	port := ":5050"
-	log.Printf("Starting Http server on port %v", port)
-	return http.ListenAndServe(port, router)
+	log.Printf("Starting Http server on port %v", serverConfig.Port)
+	return http.ListenAndServe(serverConfig.Port, router)
 }
 
 func initalizeRoutes(dao repository.DAO) *mux.Router {
