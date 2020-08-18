@@ -7,31 +7,31 @@ This application can used via the following endpoints. A live version of the app
 `
 
 ### Endpoints
-Path: `/tasks`
-Method: `GET`
-Optional Parameter: `completed=true|false` for filtering 
-Desc: Get all tasks
+**Path**: `/tasks`  
+Method: `GET`  
+Optional Parameter: `completed=true|false` for filtering   
+Desc: Get all tasks  
 
-Path: `/tasks/{id}`
-Method: `GET`
-Desc: Get task by id
+**Path**: `/tasks/{id}`  
+Method: `GET`  
+Desc: Get task by id  
 
-Path: `/tasks`
-Method: `POST`
-Desc: Create a new todo task
-Content-Type: application/json
-Body: {"goal": "Get oil changed"}
-Note: Resource location is returned in `Location` header for other calls 
+**Path**: `/tasks`  
+Method: `POST`  
+Desc: Create a new todo task  
+Content-Type: application/json  
+Body: {"goal": "Get oil changed"}  
+Note: Resource location is returned in `Location` header   
 
-Path: `/tasks/{id}`
-Method: `PUT`
-Desc: Update task by id
-Content-Type: application/json
-Body: {"goal": "Clean room", "completed": true|false} // completed optional defaults to false
+**Path**: `/tasks/{id}`  
+Method: `PUT`  
+Desc: Update task by id  
+Content-Type: application/json  
+Body: {"goal": "Clean room", "completed": true|false} // completed optional defaults to false  
 
-Path: `/tasks/{id}`
-Method: `DELETE`
-Desc: Delete task at id
+**Path**: `/tasks/{id}`  
+Method: `DELETE`  
+Desc: Delete task at id  
 
 
 ## Running this application
