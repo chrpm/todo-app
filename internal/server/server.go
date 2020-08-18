@@ -34,18 +34,12 @@ func initalizeRoutes(dao repository.DAO) *mux.Router {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/tasks").Subrouter()
 
-	// Single object endpoints
-	s.HandleFunc("/{id}", getTask).Methods("GET")
-	s.HandleFunc("/{id}", updateTask).Methods("PUT")
+	s.HandleFunc("", getTasksHandler(dao)).Methods("GET")
+	s.HandleFunc("/{id}", getTaskHandler(dao)).Methods("GET")
+	s.HandleFunc("/{id}", updateTaskHandler(dao)).Methods("PUT")
 	s.HandleFunc("", createTaskHandler(dao)).Methods("POST")
-	s.HandleFunc("/{id}", modifyTask).Methods("PATCH")
-	s.HandleFunc("/{id}", deleteTask).Methods("DELETE")
-
-	// Multiple object endpoints
-	s.HandleFunc("", getTasks).Methods("GET")
-	s.HandleFunc("", updateTasks).Methods("PUT")
-	s.HandleFunc("", modifyTasks).Methods("PATCH")
-	s.HandleFunc("", deleteTasks).Methods("DELETE")
+	s.HandleFunc("/{id}", modifyTaskHandler(dao)).Methods("PATCH")
+	s.HandleFunc("/{id}", deleteTaskHandler(dao)).Methods("DELETE")
 
 	return s
 }

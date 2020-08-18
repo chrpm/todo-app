@@ -2,25 +2,54 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"todo-app/internal/config"
 	"todo-app/internal/data"
 	"todo-app/internal/repository"
+
+	"github.com/gorilla/mux"
 )
 
-func getTask(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	// Return 404 not found
-	w.Write([]byte("Get One\n")) // Return object
-}
+func getTaskHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idParam := mux.Vars(r)["id"]
+		id, err := strconv.ParseInt(idParam, 10, 32)
+		if err != nil {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
 
-func getTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	// Return empty object list when none found
-	w.Write([]byte("Get Many\n")) // Return Objects
+		task, err := dao.GetTask(int(id))
+		if err != nil {
+			if errors.Is(err, data.ErrRecordNotFound) {
+				http.Error(w, "", http.StatusNotFound)
+			} else {
+				http.Error(w, "", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		taskJSON, err := json.Marshal(task)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(taskJSON))
+	}
+}
+func getTasksHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		// Return empty object list when none found
+		w.Write([]byte("Get Many\n")) // Return Objects
+	}
 }
 
 func createTaskHandler(dao repository.DAO) http.HandlerFunc {
@@ -61,37 +90,26 @@ func createTaskHandler(dao repository.DAO) http.HandlerFunc {
 	}
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Update One\n"))
+func updateTaskHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Update One\n"))
+	}
 }
 
-func updateTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Update Many\n"))
+func modifyTaskHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Modify One\n"))
+	}
 }
 
-func modifyTask(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Modify One\n"))
-}
-
-func modifyTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Modify Many"))
-}
-
-func deleteTask(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNoContent)
-	// return 404 if not found
-	w.Write([]byte("Delete One\n"))
-}
-
-func deleteTasks(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("Delete Many\n"))
+func deleteTaskHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		// return 404 if not found
+		w.Write([]byte("Delete One\n"))
+	}
 }

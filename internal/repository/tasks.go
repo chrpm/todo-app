@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"todo-app/internal/data"
 
 	_ "github.com/go-sql-driver/mysql" // import for driver
 )
@@ -31,13 +32,32 @@ type TaskDAO struct {
 func (dao *TaskDAO) InsertTask(goal string) (id int64, err error) {
 	stmt, err := dao.DB.Prepare("INSERT INTO tasks (goal) VALUES (?)")
 	if err != nil {
-		return -1, err
+		return
 	}
 
 	result, err := stmt.Exec(goal)
 	if err != nil {
-		return -1, err
+		return
 	}
 
 	return result.LastInsertId()
+}
+
+// GetTask finds a task in the database
+func (dao *TaskDAO) GetTask(taskID int) (*data.Task, error) {
+	task := data.Task{}
+
+	stmt, err := dao.DB.Prepare("SELECT id, goal, completed FROM tasks WHERE id = ?")
+	if err != nil {
+		return &task, nil
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(taskID).Scan(&task.ID, &task.Goal, &task.Completed)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return &task, data.ErrRecordNotFound
+	}
+
+	return &task, nil
 }
