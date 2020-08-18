@@ -1,6 +1,13 @@
 package server
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"todo-app/internal/config"
+	"todo-app/internal/data"
+	"todo-app/internal/repository"
+)
 
 func getTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -16,19 +23,42 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Get Many\n")) // Return Objects
 }
 
-func createTask(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", "objectID")
-	w.WriteHeader(http.StatusCreated)
-	// return 400 bad request when cant create
-	w.Write([]byte("Create One\n")) // Return body of object
-}
+func createTaskHandler(dao repository.DAO) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+			return
+		}
 
-func createTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	// return 400 bad request when cant create
-	w.Write([]byte("Create Many\n")) // Return body of objects
+		dec := json.NewDecoder(r.Body)
+		var t data.CreateTaskRequest
+		err := dec.Decode(&t)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Couldnt parse json body: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+
+		goal := t.Goal
+
+		// Request Validation
+		if len(goal) == 0 {
+			http.Error(w, "Goal cannot be empty", http.StatusBadRequest)
+			return
+		}
+		if len(goal) > config.MaxGoalLength {
+			http.Error(w, fmt.Sprintf("Goal max length is %d characters", config.MaxGoalLength), http.StatusBadRequest)
+			return
+		}
+
+		id, err := dao.InsertTask(goal)
+		if err != nil {
+			http.Error(w, "DB Write Failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Location", fmt.Sprintf("/tasks/%d", id))
+		w.WriteHeader(http.StatusCreated)
+	}
 }
 
 func updateTask(w http.ResponseWriter, r *http.Request) {

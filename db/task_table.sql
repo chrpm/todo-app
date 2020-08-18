@@ -1,0 +1,5 @@
+CREATE TABLE tasks (
+     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+     goal VARCHAR(255) NOT NULL,
+     completed BOOLEAN DEFAULT false
+     );
