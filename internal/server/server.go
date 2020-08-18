@@ -43,7 +43,6 @@ func initalizeRoutes(dao repository.DAO) *mux.Router {
 	s.HandleFunc("/{id}", getTaskHandler(dao)).Methods("GET")
 	s.HandleFunc("/{id}", updateTaskHandler(dao)).Methods("PUT")
 	s.HandleFunc("", createTaskHandler(dao)).Methods("POST")
-	s.HandleFunc("/{id}", modifyTaskHandler(dao)).Methods("PATCH")
 	s.HandleFunc("/{id}", deleteTaskHandler(dao)).Methods("DELETE")
 
 	return s

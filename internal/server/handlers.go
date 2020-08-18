@@ -45,10 +45,27 @@ func getTaskHandler(dao repository.DAO) http.HandlerFunc {
 }
 func getTasksHandler(dao repository.DAO) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		completed := r.URL.Query().Get("completed")
+		if completed != "true" && completed != "false" {
+			completed = ""
+		}
+
+		tasks, err := dao.GetTasks(completed)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		tasksJSON, err := json.Marshal(tasks)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		// Return empty object list when none found
-		w.Write([]byte("Get Many\n")) // Return Objects
+		w.Write([]byte(tasksJSON))
 	}
 }
 
@@ -67,19 +84,13 @@ func createTaskHandler(dao repository.DAO) http.HandlerFunc {
 			return
 		}
 
-		goal := t.Goal
-
-		// Request Validation
-		if len(goal) == 0 {
-			http.Error(w, "Goal cannot be empty", http.StatusBadRequest)
-			return
-		}
-		if len(goal) > config.MaxGoalLength {
-			http.Error(w, fmt.Sprintf("Goal max length is %d characters", config.MaxGoalLength), http.StatusBadRequest)
+		msg := validateGoal(t.Goal)
+		if msg != "" {
+			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
 
-		id, err := dao.InsertTask(goal)
+		id, err := dao.InsertTask(t.Goal)
 		if err != nil {
 			http.Error(w, "DB Write Failed", http.StatusInternalServerError)
 			return
@@ -92,24 +103,72 @@ func createTaskHandler(dao repository.DAO) http.HandlerFunc {
 
 func updateTaskHandler(dao repository.DAO) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Update One\n"))
-	}
-}
+		idParam := mux.Vars(r)["id"]
+		id, err := strconv.ParseInt(idParam, 10, 32)
+		if err != nil {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+			return
+		}
 
-func modifyTaskHandler(dao repository.DAO) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		dec := json.NewDecoder(r.Body)
+		var t data.UpdateTaskRequest
+		err = dec.Decode(&t)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Couldnt parse json body: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("%v", t)
+
+		msg := validateGoal(t.Goal)
+		if msg != "" {
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
+
+		rowsUpdated, err := dao.UpdateTask(int(id), t.Goal, t.Completed)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		if rowsUpdated < 1 {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Modify One\n"))
 	}
 }
 
 func deleteTaskHandler(dao repository.DAO) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		idParam := mux.Vars(r)["id"]
+		id, err := strconv.ParseInt(idParam, 10, 32)
+		if err != nil {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+
+		err = dao.DeleteTask(int(id))
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusNoContent)
-		// return 404 if not found
-		w.Write([]byte("Delete One\n"))
 	}
+}
+
+func validateGoal(goal string) string {
+	// Request Validation
+	if len(goal) == 0 {
+		return "Goal cannot be empty"
+	}
+	if len(goal) > config.MaxGoalLength {
+		return fmt.Sprintf("Goal max length is %d characters", config.MaxGoalLength)
+	}
+	return ""
 }
